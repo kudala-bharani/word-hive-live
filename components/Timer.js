@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function Timer({ endTime, onTimeUp }) {
+export default function Timer({ endTime, onTimeUp, label }) {
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function Timer({ endTime, onTimeUp }) {
 
   return (
     <div className={`text-center ${isLowTime ? 'animate-pulse' : ''}`}>
-      <div className="text-sm text-gray-600 mb-1">Time Remaining</div>
+      <div className="text-sm text-gray-600 mb-1">{label || 'Time Remaining'}</div>
       <div className={`text-4xl font-bold ${isLowTime ? 'text-red-600' : 'text-honey-700'}`}>
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </div>

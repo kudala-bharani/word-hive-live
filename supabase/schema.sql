@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS rooms (
   start_time BIGINT,
   end_time BIGINT,
   puzzle_id INTEGER,
+  current_round INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

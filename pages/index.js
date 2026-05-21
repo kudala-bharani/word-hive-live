@@ -20,7 +20,7 @@ export default function Home() {
               A live multiplayer word puzzle game for teams
             </p>
             <p className="text-gray-600 mt-2">
-              Create words from 7 letters • Play with up to 10 friends • Real-time scoring
+              5 word hives × 2 minutes • 10-minute team games • Scores stack each round
             </p>
           </div>
 
@@ -49,6 +49,7 @@ export default function Home() {
                 <li>✓ Words must be at least 4 letters long</li>
                 <li>✓ Use letters as many times as you want</li>
                 <li>✓ Find pangrams (words using all 7 letters) for bonus points!</li>
+                <li>✓ Play 5 hives per game — host starts each new round</li>
               </ul>
             </div>
           </div>

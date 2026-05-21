@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { createRoom } from '../lib/supabase';
+import { TOTAL_GAME_MINUTES, TOTAL_ROUNDS, ROUND_DURATION_MINUTES } from '../lib/gameConfig';
 
 function generateRoomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -15,7 +16,6 @@ function generateRoomCode() {
 export default function CreateRoom() {
   const router = useRouter();
   const [hostName, setHostName] = useState('');
-  const [duration, setDuration] = useState(10);
   const [loading, setLoading] = useState(false);
 
   const handleCreate = async (e) => {
@@ -26,9 +26,8 @@ export default function CreateRoom() {
     const roomCode = generateRoomCode();
 
     try {
-      const { room, player } = await createRoom(roomCode, hostName.trim(), duration);
+      const { player } = await createRoom(roomCode, hostName.trim(), TOTAL_GAME_MINUTES);
 
-      // Store player info in localStorage for persistence
       localStorage.setItem('playerId', player.id);
       localStorage.setItem('playerName', player.name);
 
@@ -74,26 +73,14 @@ export default function CreateRoom() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Game Duration
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[5, 10, 15, 20].map((mins) => (
-                    <button
-                      key={mins}
-                      type="button"
-                      onClick={() => setDuration(mins)}
-                      className={`py-3 rounded-lg font-semibold transition-all ${
-                        duration === mins
-                          ? 'bg-honey-500 text-white shadow-md'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {mins} minutes
-                    </button>
-                  ))}
-                </div>
+              <div className="bg-honey-50 border border-honey-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-800 mb-2">Game format</h3>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  <li>• {TOTAL_GAME_MINUTES} minutes total</li>
+                  <li>• {TOTAL_ROUNDS} word hives × {ROUND_DURATION_MINUTES} minutes each</li>
+                  <li>• Scores add up across all hives</li>
+                  <li>• Host starts each new hive after round scores</li>
+                </ul>
               </div>
 
               <button

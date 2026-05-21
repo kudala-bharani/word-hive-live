@@ -9,12 +9,20 @@ import {
   submitWord as submitWordToDb,
   subscribeToRoom,
   notifyRoomUpdate,
-  resetPlayerScores
+  resetPlayerScores,
+  resetPlayerWordsForRound
 } from '../../lib/supabase';
-import { getRandomPuzzle, getPuzzleById } from '../../lib/puzzles';
+import { getRandomPuzzle, getRandomPuzzleExcluding, getPuzzleById } from '../../lib/puzzles';
+import {
+  TOTAL_ROUNDS,
+  ROUND_DURATION_MS,
+  TOTAL_GAME_MINUTES,
+  getRoundLabel
+} from '../../lib/gameConfig';
 import { validateWord, isPangram, calculateScore } from '../../lib/wordValidator';
 import LetterHive from '../../components/LetterHive';
 import Leaderboard from '../../components/Leaderboard';
+import RoundLeaderboard from '../../components/RoundLeaderboard';
 import Timer from '../../components/Timer';
 import WordInput from '../../components/WordInput';
 
@@ -96,15 +104,34 @@ export default function Room() {
   const handleStartGame = async () => {
     if (!isHost || !room) return;
 
+    await resetPlayerScores(roomCode);
     const selectedPuzzle = getRandomPuzzle();
-    const duration = room.duration * 60 * 1000;
     const startTime = Date.now();
-    const endTime = startTime + duration;
 
     await updateRoomStatus(roomCode, 'active', {
+      currentRound: 1,
       puzzleId: selectedPuzzle.id,
       startTime,
-      endTime
+      endTime: startTime + ROUND_DURATION_MS
+    });
+
+    setPuzzle(selectedPuzzle);
+    await notifyRoomUpdate(roomCode);
+  };
+
+  const handleStartNextRound = async () => {
+    if (!isHost || !room || room.status !== 'round_break') return;
+
+    const nextRound = room.currentRound + 1;
+    await resetPlayerWordsForRound(roomCode);
+    const selectedPuzzle = getRandomPuzzleExcluding([room.puzzleId]);
+    const startTime = Date.now();
+
+    await updateRoomStatus(roomCode, 'active', {
+      currentRound: nextRound,
+      puzzleId: selectedPuzzle.id,
+      startTime,
+      endTime: startTime + ROUND_DURATION_MS
     });
 
     setPuzzle(selectedPuzzle);
@@ -113,7 +140,18 @@ export default function Room() {
 
   const handleTimeUp = useCallback(async () => {
     if (!isHost) return;
-    await updateRoomStatus(roomCode, 'ended');
+
+    const latest = await getRoom(roomCode);
+    if (!latest || latest.status !== 'active') return;
+
+    if (latest.currentRound >= TOTAL_ROUNDS) {
+      await updateRoomStatus(roomCode, 'ended', { endTime: Date.now() });
+    } else {
+      await updateRoomStatus(roomCode, 'round_break', {
+        startTime: null,
+        endTime: null
+      });
+    }
     await notifyRoomUpdate(roomCode);
   }, [isHost, roomCode]);
 
@@ -187,7 +225,8 @@ export default function Room() {
     await updateRoomStatus(roomCode, 'waiting', {
       puzzleId: null,
       startTime: null,
-      endTime: null
+      endTime: null,
+      currentRound: 0
     });
     setPuzzle(null);
     await notifyRoomUpdate(roomCode);
@@ -259,15 +298,21 @@ export default function Room() {
                 <h3 className="text-xl font-bold mb-4 text-gray-800">
                   ⚙️ Game Settings
                 </h3>
-                <div className="space-y-3">
+                <div className="space-y-3 text-sm">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700">Duration:</span>
+                    <span className="text-gray-700">Format:</span>
                     <span className="font-semibold text-honey-700">
-                      {room.duration} minutes
+                      {TOTAL_ROUNDS} hives × 2 min
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700">Max Players:</span>
+                    <span className="text-gray-700">Total time:</span>
+                    <span className="font-semibold text-honey-700">
+                      {TOTAL_GAME_MINUTES} minutes
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700">Max players:</span>
                     <span className="font-semibold text-honey-700">10</span>
                   </div>
                 </div>
@@ -307,11 +352,11 @@ export default function Room() {
                   className="btn-primary text-xl px-12 py-4"
                   disabled={players.length < 1}
                 >
-                  🚀 Start Game
+                  🚀 Start Hive 1
                 </button>
               ) : (
                 <div className="text-lg text-gray-600">
-                  Waiting for host to start the game...
+                  Waiting for host to start the first hive...
                 </div>
               )}
             </div>
@@ -350,7 +395,16 @@ export default function Room() {
                   </div>
                 </div>
 
-                <Timer endTime={room.endTime} onTimeUp={handleTimeUp} />
+                <div className="text-center">
+                  <div className="text-sm font-semibold text-honey-600 mb-1">
+                    {getRoundLabel(room.currentRound)}
+                  </div>
+                  <Timer
+                    endTime={room.endTime}
+                    onTimeUp={handleTimeUp}
+                    label="Hive time left"
+                  />
+                </div>
 
                 <div>
                   <div className="text-sm text-gray-600">Playing as</div>
@@ -462,11 +516,69 @@ export default function Room() {
     );
   }
 
-  // Results Page
-  if (room.status === 'ended' && puzzle) {
+  // Between hives — cumulative scores, host starts next round
+  if (room.status === 'round_break') {
+    const nextRound = room.currentRound + 1;
+
+    return (
+      <>
+        <Head>
+          <title>Hive {room.currentRound} results - {roomCode}</title>
+        </Head>
+
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-honey-700 mb-2">
+                ⏸️ Hive {room.currentRound} complete
+              </h1>
+              <p className="text-gray-600">
+                Cumulative scores after {getRoundLabel(room.currentRound)}
+              </p>
+            </div>
+
+            <RoundLeaderboard
+              players={players}
+              currentPlayerId={currentPlayer.id}
+              title="Standings"
+              subtitle={`${TOTAL_ROUNDS - room.currentRound} hive${
+                TOTAL_ROUNDS - room.currentRound === 1 ? '' : 's'
+              } remaining`}
+            />
+
+            <div className="mt-8 text-center">
+              {isHost ? (
+                <button
+                  onClick={handleStartNextRound}
+                  className="btn-primary text-xl px-12 py-4"
+                >
+                  🚀 Start {getRoundLabel(nextRound)}
+                </button>
+              ) : (
+                <div className="text-lg text-gray-600">
+                  Waiting for host to start {getRoundLabel(nextRound)}...
+                </div>
+              )}
+            </div>
+
+            <div className="text-center mt-6">
+              <button
+                onClick={() => router.push('/')}
+                className="text-honey-600 hover:text-honey-700 text-sm font-medium"
+              >
+                ← Leave Room
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // Final results
+  if (room.status === 'ended') {
     const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
     const winner = sortedPlayers[0];
-    const totalPossibleWords = puzzle.validWords.length;
 
     return (
       <>
@@ -480,6 +592,9 @@ export default function Room() {
               <h1 className="text-5xl font-bold text-honey-700 mb-4">
                 🎊 Game Over!
               </h1>
+              <p className="text-gray-600 mb-2">
+                All {TOTAL_ROUNDS} hives complete ({TOTAL_GAME_MINUTES} minutes)
+              </p>
               {winner && (
                 <div className="text-2xl text-gray-700">
                   👑 Winner: <span className="font-bold text-honey-600">{winner.name}</span>
@@ -487,74 +602,12 @@ export default function Room() {
               )}
             </div>
 
-            <div className="card mb-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800">
-                Final Leaderboard
-              </h2>
-              <div className="space-y-3">
-                {sortedPlayers.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className={`flex items-center justify-between p-4 rounded-lg ${
-                      index === 0
-                        ? 'bg-gradient-to-r from-yellow-100 to-amber-100 border-2 border-yellow-400'
-                        : 'bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-3xl">
-                        {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
-                      </span>
-                      <div>
-                        <div className="font-bold text-lg text-gray-800">
-                          {player.name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {player.wordsFound.length} words found
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-3xl font-bold text-honey-700">
-                      {player.score}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="card">
-                <h3 className="font-bold text-lg mb-3 text-gray-800">
-                  📊 Statistics
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total possible words:</span>
-                    <span className="font-semibold">{totalPossibleWords}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Pangrams:</span>
-                    <span className="font-semibold">{puzzle.pangrams.length}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="card">
-                <h3 className="font-bold text-lg mb-3 text-gray-800">
-                  ⭐ Pangrams
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {puzzle.pangrams.map((word, index) => (
-                    <span
-                      key={index}
-                      className="pangram-badge"
-                    >
-                      {word}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <RoundLeaderboard
+              players={players}
+              currentPlayerId={currentPlayer.id}
+              title="Final leaderboard"
+              subtitle="Total score across all hives"
+            />
 
             <div className="flex flex-wrap gap-4 justify-center">
               {isHost && (
