@@ -26,13 +26,13 @@ export default function CreateRoom() {
     const roomCode = generateRoomCode();
 
     try {
-      const { room, player } = createRoom(roomCode, hostName.trim(), duration);
+      const { room, player } = await createRoom(roomCode, hostName.trim(), duration);
 
       // Store player info in localStorage for persistence
       localStorage.setItem('playerId', player.id);
       localStorage.setItem('playerName', player.name);
 
-      router.push(`/room/${roomCode}`);
+      await router.push(`/room/${roomCode}`);
     } catch (error) {
       console.error('Error creating room:', error);
       alert('Failed to create room. Please try again.');

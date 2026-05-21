@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { getRoom, joinRoom } from '../lib/supabase';
@@ -9,6 +9,12 @@ export default function JoinRoom() {
   const [playerName, setPlayerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (router.query.code) {
+      setRoomCode(String(router.query.code).toUpperCase());
+    }
+  }, [router.query.code]);
 
   const handleJoin = async (e) => {
     e.preventDefault();
@@ -21,7 +27,7 @@ export default function JoinRoom() {
       const upperCode = roomCode.trim().toUpperCase();
 
       // Check if room exists
-      const room = getRoom(upperCode);
+      const room = await getRoom(upperCode);
       if (!room) {
         setError('Room not found. Please check the code and try again.');
         setLoading(false);
@@ -29,7 +35,7 @@ export default function JoinRoom() {
       }
 
       // Join the room
-      const result = joinRoom(upperCode, playerName.trim());
+      const result = await joinRoom(upperCode, playerName.trim());
 
       if (result.error) {
         setError(result.error);
@@ -41,7 +47,7 @@ export default function JoinRoom() {
       localStorage.setItem('playerId', result.player.id);
       localStorage.setItem('playerName', result.player.name);
 
-      router.push(`/room/${upperCode}`);
+      await router.push(`/room/${upperCode}`);
     } catch (err) {
       console.error('Error joining room:', err);
       setError('Failed to join room. Please try again.');

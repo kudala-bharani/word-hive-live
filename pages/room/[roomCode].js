@@ -35,25 +35,24 @@ export default function Room() {
   useEffect(() => {
     if (!roomCode) return;
 
-    const loadData = () => {
-      const roomData = getRoom(roomCode);
+    const loadData = async () => {
+      const roomData = await getRoom(roomCode);
       if (!roomData) {
         router.push('/');
         return;
       }
 
       setRoom(roomData);
-      const roomPlayers = getRoomPlayers(roomCode);
+      const roomPlayers = await getRoomPlayers(roomCode);
       setPlayers(roomPlayers);
 
       const playerId = localStorage.getItem('playerId');
       if (playerId) {
-        const player = getPlayer(playerId);
+        const player = roomPlayers.find((p) => p.id === playerId) || (await getPlayer(playerId));
         setCurrentPlayer(player);
       }
 
-      // Load puzzle if game is active
-      if (roomData.puzzleId && !puzzle) {
+      if (roomData.puzzleId) {
         const puzzleData = getPuzzleById(roomData.puzzleId);
         setPuzzle(puzzleData);
       }
@@ -94,31 +93,31 @@ export default function Room() {
 
   const isHost = currentPlayer?.isHost;
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     if (!isHost || !room) return;
 
     const selectedPuzzle = getRandomPuzzle();
-    const duration = room.duration * 60 * 1000; // Convert minutes to milliseconds
+    const duration = room.duration * 60 * 1000;
     const startTime = Date.now();
     const endTime = startTime + duration;
 
-    updateRoomStatus(roomCode, 'active', {
+    await updateRoomStatus(roomCode, 'active', {
       puzzleId: selectedPuzzle.id,
       startTime,
       endTime
     });
 
     setPuzzle(selectedPuzzle);
-    notifyRoomUpdate(roomCode);
+    await notifyRoomUpdate(roomCode);
   };
 
-  const handleTimeUp = useCallback(() => {
+  const handleTimeUp = useCallback(async () => {
     if (!isHost) return;
-    updateRoomStatus(roomCode, 'ended');
-    notifyRoomUpdate(roomCode);
+    await updateRoomStatus(roomCode, 'ended');
+    await notifyRoomUpdate(roomCode);
   }, [isHost, roomCode]);
 
-  const handleSubmitWord = (word) => {
+  const handleSubmitWord = async (word) => {
     if (!puzzle || !currentPlayer || room.status !== 'active') return;
 
     const validation = validateWord(
@@ -136,7 +135,7 @@ export default function Room() {
     }
 
     const score = calculateScore(word, puzzle.letters);
-    const result = submitWordToDb(roomCode, currentPlayer.id, word, score);
+    const result = await submitWordToDb(roomCode, currentPlayer.id, word, score);
 
     if (result.error) {
       setFeedback(result.error);
@@ -155,7 +154,7 @@ export default function Room() {
     }
 
     setTimeout(() => setFeedback(''), 3000);
-    notifyRoomUpdate(roomCode);
+    await notifyRoomUpdate(roomCode);
   };
 
   const handleLetterClick = (letter) => {
@@ -176,22 +175,22 @@ export default function Room() {
     setTimeout(() => setFeedback(''), 2000);
   };
 
-  const handleEndGame = () => {
+  const handleEndGame = async () => {
     if (!isHost) return;
-    updateRoomStatus(roomCode, 'ended');
-    notifyRoomUpdate(roomCode);
+    await updateRoomStatus(roomCode, 'ended');
+    await notifyRoomUpdate(roomCode);
   };
 
-  const handlePlayAgain = () => {
+  const handlePlayAgain = async () => {
     if (!isHost) return;
-    resetPlayerScores(roomCode);
-    updateRoomStatus(roomCode, 'waiting', {
+    await resetPlayerScores(roomCode);
+    await updateRoomStatus(roomCode, 'waiting', {
       puzzleId: null,
       startTime: null,
       endTime: null
     });
     setPuzzle(null);
-    notifyRoomUpdate(roomCode);
+    await notifyRoomUpdate(roomCode);
   };
 
   if (!room || !currentPlayer) {
