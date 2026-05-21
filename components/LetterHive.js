@@ -57,10 +57,6 @@ export default function LetterHive({ letters, centerLetter, onLetterClick }) {
           {outer[5]}
         </div>
       </div>
-
-      <div className="text-sm text-gray-600 mt-4">
-        Click letters to add them to your word
-      </div>
     </div>
   );
 }

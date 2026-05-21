@@ -25,6 +25,7 @@ import Leaderboard from '../../components/Leaderboard';
 import RoundLeaderboard from '../../components/RoundLeaderboard';
 import GameRules from '../../components/GameRules';
 import FoundWordsPanel from '../../components/FoundWordsPanel';
+import PossibleWordsPanel from '../../components/PossibleWordsPanel';
 import Timer from '../../components/Timer';
 import WordInput from '../../components/WordInput';
 
@@ -460,10 +461,6 @@ export default function Room() {
                     </div>
                   )}
 
-                  <p className="mt-4 text-center text-sm text-gray-600">
-                    Center letter:{' '}
-                    <span className="font-bold text-honey-600">{puzzle.centerLetter}</span>
-                  </p>
                 </div>
               </div>
 
@@ -490,6 +487,7 @@ export default function Room() {
   // Between hives — cumulative scores, host starts next round
   if (room.status === 'round_break') {
     const nextRound = room.currentRound + 1;
+    const roundPuzzle = puzzle || getPuzzleById(room.puzzleId);
 
     return (
       <>
@@ -497,8 +495,8 @@ export default function Room() {
           <title>Hive {room.currentRound} results - {roomCode}</title>
         </Head>
 
-        <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full">
+        <div className="min-h-screen p-4 py-8">
+          <div className="max-w-4xl mx-auto w-full">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-honey-700 mb-2">
                 ⏸️ Hive {room.currentRound} complete
@@ -516,6 +514,8 @@ export default function Room() {
                 TOTAL_ROUNDS - room.currentRound === 1 ? '' : 's'
               } remaining`}
             />
+
+            <PossibleWordsPanel puzzle={roundPuzzle} players={players} />
 
             <div className="mt-8 text-center">
               {isHost ? (
@@ -548,8 +548,8 @@ export default function Room() {
 
   // Final results
   if (room.status === 'ended') {
-    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-    const winner = sortedPlayers[0];
+    const winner = [...players].sort((a, b) => b.score - a.score)[0];
+    const finalPuzzle = puzzle || getPuzzleById(room.puzzleId);
 
     return (
       <>
@@ -580,7 +580,9 @@ export default function Room() {
               subtitle="Total score across all hives"
             />
 
-            <div className="flex flex-wrap gap-4 justify-center">
+            <PossibleWordsPanel puzzle={finalPuzzle} players={players} />
+
+            <div className="flex flex-wrap gap-4 justify-center mt-8">
               {isHost && (
                 <button
                   onClick={handlePlayAgain}
