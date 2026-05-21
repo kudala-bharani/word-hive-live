@@ -23,6 +23,8 @@ import { validateWord, isPangram, calculateScore } from '../../lib/wordValidator
 import LetterHive from '../../components/LetterHive';
 import Leaderboard from '../../components/Leaderboard';
 import RoundLeaderboard from '../../components/RoundLeaderboard';
+import GameRules from '../../components/GameRules';
+import FoundWordsPanel from '../../components/FoundWordsPanel';
 import Timer from '../../components/Timer';
 import WordInput from '../../components/WordInput';
 
@@ -249,7 +251,7 @@ export default function Room() {
         </Head>
 
         <div className="min-h-screen flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full">
+          <div className="max-w-4xl w-full">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold text-honey-700 mb-2">
                 🐝 Game Lobby
@@ -337,6 +339,10 @@ export default function Room() {
               </div>
             </div>
 
+            <div className="card mt-6">
+              <GameRules />
+            </div>
+
             {feedback && (
               <div className="card mt-6 bg-honey-100 border-2 border-honey-400">
                 <div className="text-center text-honey-800 font-semibold">
@@ -356,7 +362,7 @@ export default function Room() {
                 </button>
               ) : (
                 <div className="text-lg text-gray-600">
-                  Waiting for host to start the first hive...
+                  Read the rules above — waiting for host to start Hive 1...
                 </div>
               )}
             </div>
@@ -415,9 +421,17 @@ export default function Room() {
               </div>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-6">
-              {/* Main Game Area */}
-              <div className="lg:col-span-2 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Found words — left */}
+              <div className="lg:col-span-3 order-2 lg:order-1">
+                <FoundWordsPanel
+                  words={currentPlayer.wordsFound}
+                  puzzleLetters={puzzle.letters}
+                />
+              </div>
+
+              {/* Hive + input — center */}
+              <div className="lg:col-span-6 order-1 lg:order-2 space-y-4">
                 <div className="card">
                   <LetterHive
                     letters={puzzle.letters}
@@ -446,58 +460,15 @@ export default function Room() {
                     </div>
                   )}
 
-                  <div className="mt-6 pt-6 border-t border-gray-200">
-                    <div className="text-sm font-semibold text-gray-700 mb-2">
-                      Rules:
-                    </div>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• Words must be at least 4 letters long</li>
-                      <li>
-                        • Must include the center letter{' '}
-                        <span className="font-bold text-honey-600">
-                          "{puzzle.centerLetter}"
-                        </span>
-                      </li>
-                      <li>• Use any letter multiple times</li>
-                      <li>• Pangrams (all 7 letters) get +7 bonus points!</li>
-                    </ul>
-                  </div>
-                </div>
-
-                {/* Player's Found Words */}
-                <div className="card">
-                  <h3 className="text-lg font-bold mb-3 text-gray-800">
-                    Your Words ({currentPlayer.wordsFound.length})
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {currentPlayer.wordsFound.length === 0 ? (
-                      <div className="text-gray-500 text-sm">
-                        No words found yet. Start typing!
-                      </div>
-                    ) : (
-                      currentPlayer.wordsFound.map((word, index) => {
-                        const wordIsPangram = isPangram(word, puzzle.letters);
-                        return (
-                          <span
-                            key={index}
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              wordIsPangram
-                                ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-white'
-                                : 'bg-honey-100 text-honey-800'
-                            }`}
-                          >
-                            {word}
-                            {wordIsPangram && ' ⭐'}
-                          </span>
-                        );
-                      })
-                    )}
-                  </div>
+                  <p className="mt-4 text-center text-sm text-gray-600">
+                    Center letter:{' '}
+                    <span className="font-bold text-honey-600">{puzzle.centerLetter}</span>
+                  </p>
                 </div>
               </div>
 
-              {/* Leaderboard */}
-              <div className="lg:col-span-1">
+              {/* Leaderboard — right */}
+              <div className="lg:col-span-3 order-3">
                 <Leaderboard players={players} currentPlayerId={currentPlayer.id} />
 
                 {isHost && (
