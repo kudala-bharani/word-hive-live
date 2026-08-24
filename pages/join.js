@@ -1,30 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { getRoom, joinRoom } from '../lib/supabase';
 
 export default function JoinRoom() {
   const router = useRouter();
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (router.query.code) {
-      setRoomCode(String(router.query.code).toUpperCase());
-    }
-  }, [router.query.code]);
+  const queryRoomCode = router.query.code
+    ? String(router.query.code).toUpperCase()
+    : '';
+  const enteredRoomCode = roomCode ?? queryRoomCode;
 
   const handleJoin = async (e) => {
     e.preventDefault();
-    if (!roomCode.trim() || !playerName.trim()) return;
+    if (!enteredRoomCode.trim() || !playerName.trim()) return;
 
     setLoading(true);
     setError('');
 
     try {
-      const upperCode = roomCode.trim().toUpperCase();
+      const upperCode = enteredRoomCode.trim().toUpperCase();
 
       // Check if room exists
       const room = await getRoom(upperCode);
@@ -80,7 +79,7 @@ export default function JoinRoom() {
                 </label>
                 <input
                   type="text"
-                  value={roomCode}
+                  value={enteredRoomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
                   placeholder="Enter 6-digit code..."
                   className="input-field text-center text-2xl tracking-widest font-mono"
@@ -112,7 +111,7 @@ export default function JoinRoom() {
 
               <button
                 type="submit"
-                disabled={!roomCode.trim() || !playerName.trim() || loading}
+                disabled={!enteredRoomCode.trim() || !playerName.trim() || loading}
                 className="btn-primary w-full text-lg"
               >
                 {loading ? 'Joining...' : 'Join Game'}

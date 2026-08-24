@@ -46,7 +46,7 @@ A seven-letter pangram, for example, earns 14 points.
 
 ## Tech stack
 
-- **Application:** Next.js 14 Pages Router and React 18
+- **Application:** Next.js 16 Pages Router and React 19
 - **Styling:** Tailwind CSS 3
 - **Data:** Supabase Postgres
 - **Live sync:** Supabase Realtime / Postgres Changes
@@ -74,7 +74,7 @@ When either Supabase variable is missing, the app uses in-browser JavaScript obj
 
 ### Prerequisites
 
-- Node.js 18.17 or later
+- Node.js 20.9 or later
 - npm
 - A Supabase project for multi-device play
 

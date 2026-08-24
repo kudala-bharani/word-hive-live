@@ -98,6 +98,8 @@ export default function Room() {
   // Generate invite link
   useEffect(() => {
     if (typeof window !== 'undefined' && roomCode) {
+      // window.location is only available after mount, so this state mirrors an external browser value.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInviteLink(`${window.location.origin}/join?code=${roomCode}`);
     }
   }, [roomCode]);
