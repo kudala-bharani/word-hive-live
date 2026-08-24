@@ -1,199 +1,171 @@
 # 🐝 Word Hive Live
 
-A real-time multiplayer word puzzle game for teams and online meetings.
+A real-time multiplayer word puzzle game for remote teams, online meetings, and friend groups.
 
-## Features
+**[Play the live app](https://word-hive-live.vercel.app)**
 
-✨ **Multiplayer Fun**
-- Up to 10 players per game room
-- Real-time score updates and leaderboard
-- No login or account required
+A host creates a room, shares a six-character code or invite link, and starts a five-hive game. Up to 10 players build words from seven letters while scores and room state update live. No account is required.
 
-🎮 **Engaging Gameplay**
-- 7-letter word puzzles with one required center letter
-- Create words 4+ letters long
-- Find pangrams (words using all 7 letters) for bonus points
-- Configurable game duration (5, 10, 15, or 20 minutes)
+## Highlights
 
-👥 **Perfect for Teams**
-- Easy room creation with shareable codes
-- Works great while screen-sharing in Zoom, Teams, or Meet
-- Clean, modern interface optimized for all devices
+- Up to 10 players per room
+- Five 2-minute hives per game (10 minutes total)
+- Live player list, word counts, scores, and cumulative leaderboard
+- Shareable room codes and invite links
+- Between-hive standings and possible-word reveal
+- Pangram detection and bonus scoring
+- 15 bundled puzzle sets
+- Host controls for starting rounds, ending early, and playing again
+- Responsive interface for desktop and mobile browsers
+- Supabase persistence and Realtime synchronization for multi-device play
+- In-memory fallback for a zero-configuration, single-browser demo
 
-## How to Play
+Manual testing has covered a full 10-player room, the current room limit. This was a functional multiplayer test, not a throughput or scale benchmark.
 
-1. **Create a Room**: Host creates a game and shares the 6-character room code
-2. **Join**: Players enter the code and their name to join
-3. **Play**: Form words using the 7 available letters
-   - Every word must include the center letter
-   - Words must be at least 4 letters long
-   - Use letters as many times as needed
-   - Find pangrams for bonus points!
-4. **Compete**: Watch the live leaderboard and see who finds the most words
-5. **Results**: View final scores and see all possible words
+## Game format
 
-## Scoring System
+Each game contains five hives. Every hive lasts two minutes and uses a randomly selected seven-letter puzzle; the same puzzle is not used in consecutive hives. Scores carry across all five hives, while each player's found-word list resets when the next hive begins.
 
-- **4-letter word**: 1 point
-- **5+ letter word**: 1 point per letter
-- **Pangram bonus**: +7 points
+A valid word must:
 
-Examples:
-- "READ" (4 letters) = 1 point
-- "GARDEN" (6 letters) = 6 points
-- "READING" (7-letter pangram) = 7 + 7 = 14 points
+- contain at least four letters;
+- include the highlighted center letter;
+- use only the seven available letters (letters may be reused);
+- appear in the puzzle's bundled valid-word list; and
+- not have been submitted already by that player during the current hive.
 
-## Tech Stack
+### Scoring
 
-- **Frontend**: Next.js 14 + React
-- **Styling**: Tailwind CSS
-- **State Management**: In-memory (for demo) - easily replaceable with Supabase/Firebase
-- **Real-time**: Custom event system (demo mode)
+| Word | Score |
+| --- | ---: |
+| 4 letters | 1 point |
+| 5 or more letters | 1 point per letter |
+| Pangram using all 7 letters | Base score + 7 points |
 
-## Getting Started
+A seven-letter pangram, for example, earns 14 points.
+
+## Tech stack
+
+- **Application:** Next.js 14 Pages Router and React 18
+- **Styling:** Tailwind CSS 3
+- **Data:** Supabase Postgres
+- **Live sync:** Supabase Realtime / Postgres Changes
+- **Local fallback:** In-browser memory
+- **Player identity:** Browser `localStorage`
+- **Deployment:** Vercel
+
+## Runtime modes
+
+### Supabase multiplayer
+
+When both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are present, rooms and players are stored in Supabase. The client subscribes to changes on the `rooms` and `players` tables, allowing separate browsers and devices to receive room, round, and score updates.
+
+Use this mode for the actual multiplayer experience.
+
+### In-memory fallback
+
+When either Supabase variable is missing, the app uses in-browser JavaScript objects. This is useful for inspecting the interface without a database, but it:
+
+- does not synchronize separate tabs, browsers, or devices;
+- loses rooms, players, and scores on refresh; and
+- is not a replacement for the Supabase multiplayer path.
+
+## Local setup
 
 ### Prerequisites
 
-- Node.js 16+ and npm
+- Node.js 18.17 or later
+- npm
+- A Supabase project for multi-device play
 
-### Installation
-
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-2. **Run the development server**:
-   ```bash
-   npm run dev
-   ```
-
-3. **Open in browser**:
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-### Build for Production
+### Start the single-browser demo
 
 ```bash
-npm run build
-npm start
+git clone https://github.com/kudala-bharani/word-hive-live.git
+cd word-hive-live
+npm install
+npm run dev
 ```
 
-## Project Structure
+Open [http://localhost:3000](http://localhost:3000). Without Supabase variables, the app automatically uses its in-memory fallback.
 
+### Enable Supabase multiplayer
+
+1. Create a project in the [Supabase dashboard](https://supabase.com/dashboard).
+2. Open the SQL Editor and run [`supabase/schema.sql`](supabase/schema.sql).
+3. Copy your project URL and anon key from the project's API settings.
+4. Create your local environment file:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+5. Add the two values to `.env.local`:
+
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   ```
+
+6. Run `npm run dev`, create a room, and join it from another browser or device.
+
+The anon key is designed to be used by the browser. Never put a Supabase service-role key in a `NEXT_PUBLIC_*` variable.
+
+If your Supabase project predates multi-round support, run [`supabase/migration-rounds.sql`](supabase/migration-rounds.sql) once.
+
+## Deploy to Vercel
+
+1. Import this repository into Vercel.
+2. Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as project environment variables.
+3. Deploy or redeploy the project.
+4. Verify Realtime behavior by creating a room in one browser and joining it from another.
+
+`vercel.json` already contains the Next.js build and install configuration.
+
+## Project structure
+
+```text
+components/                Reusable game and leaderboard UI
+lib/gameConfig.js          Five-hive timing configuration
+lib/puzzles.js             15 bundled puzzles and word lists
+lib/supabase.js            Supabase data layer and in-memory fallback
+lib/wordValidator.js       Word validation, pangrams, and scoring
+pages/create.js            Room creation
+pages/join.js              Room joining
+pages/room/[roomCode].js   Lobby, gameplay, round breaks, and results
+supabase/schema.sql        Tables, policies, indexes, and Realtime setup
 ```
-word-hive-live/
-├── components/          # React components
-│   ├── LetterHive.js   # Honeycomb letter display
-│   ├── Leaderboard.js  # Score ranking display
-│   ├── Timer.js        # Countdown timer
-│   └── WordInput.js    # Word submission form
-├── lib/                # Utility functions
-│   ├── puzzles.js      # Puzzle database (10 curated puzzles)
-│   ├── supabase.js     # State management (in-memory for demo)
-│   └── wordValidator.js# Word validation and scoring
-├── pages/              # Next.js pages
-│   ├── index.js        # Landing page
-│   ├── create.js       # Create room page
-│   ├── join.js         # Join room page
-│   └── room/[roomCode].js # Game room (lobby + game + results)
-├── styles/             # CSS styles
-│   └── globals.css     # Global styles + Tailwind
-└── public/             # Static assets
-```
-
-## Upgrading to Production
-
-The current implementation uses in-memory state for simplicity. For production deployment with multiple users:
-
-### Option 1: Supabase (Recommended)
-
-1. Create a Supabase project at [supabase.com](https://supabase.com)
-2. Create tables for rooms and players
-3. Update `lib/supabase.js` to use the Supabase client
-4. Enable real-time subscriptions
-
-### Option 2: Firebase
-
-1. Set up Firebase Realtime Database or Firestore
-2. Update state management to use Firebase SDK
-3. Configure real-time listeners
-
-### Option 3: WebSockets
-
-1. Add a Node.js WebSocket server (Socket.io)
-2. Connect frontend to WebSocket server
-3. Broadcast room updates to all connected clients
 
 ## Customization
 
-### Adding More Puzzles
+- Change round count or duration in `lib/gameConfig.js`.
+- Add puzzle definitions in `lib/puzzles.js`.
+- Change validation and scoring in `lib/wordValidator.js`.
+- Change the honey color palette in `tailwind.config.js`.
 
-Edit `lib/puzzles.js` to add new puzzles:
+A puzzle definition must contain a unique numeric ID, exactly seven unique letters, a center letter included in that set, lowercase accepted words, and any pangrams to highlight in the results view.
 
-```javascript
-{
-  id: 11,
-  letters: ['Y', 'O', 'U', 'R', 'L', 'E', 'T', 'S'],
-  centerLetter: 'E',
-  validWords: ['your', 'words', 'here'],
-  pangrams: ['pangram1', 'pangram2']
-}
-```
+## Security and current limitations
 
-### Changing Theme Colors
+The included Supabase schema prioritizes easy demos and portfolio review. It is **not hardened for an untrusted public production service**.
 
-Edit `tailwind.config.js` to customize the honey theme colors.
+Before treating the app as production-ready, address the following:
 
-### Adjusting Game Rules
+- The current Row Level Security policies allow anonymous clients to read and write every room and player row.
+- There is no account authentication or server-side host authorization; player identity is restored from `localStorage`.
+- Word validation, score calculation, and game-state mutations run in the browser.
+- The host's open browser advances the game when a timer expires, so a room can stall if the host disconnects.
+- The 10-player cap is enforced by application code rather than an atomic database operation.
+- Score updates use a read-modify-write flow rather than a database transaction.
+- Rooms are not expired or deleted automatically.
+- Rate limiting, abuse controls, monitoring, analytics, and automated tests are not included.
 
-Edit `lib/wordValidator.js` to modify:
-- Minimum word length
-- Scoring system
-- Validation rules
+A hardened version should add authenticated or signed room membership, restrictive RLS policies, server-side/RPC mutations, atomic join and scoring operations, and scheduled room cleanup.
 
-## Browser Support
+## Feedback
 
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari (latest)
-- Mobile browsers (iOS Safari, Chrome Mobile)
-
-## Known Limitations (Demo Mode)
-
-- **No persistence**: Refreshing the page loses all data
-- **Single server**: All rooms are in-memory, not shared across tabs/devices
-- **No real-time sync**: Uses localStorage polling instead of WebSockets
-
-These limitations are intentional for the demo. Upgrade to Supabase/Firebase for production use.
-
-## Future Enhancements
-
-- [ ] Daily puzzle mode
-- [ ] Team vs team mode
-- [ ] Custom word lists
-- [ ] Difficulty levels
-- [ ] Sound effects and animations
-- [ ] Chat/reactions
-- [ ] Export game results
-- [ ] Admin dashboard
-- [ ] Player statistics
-
-## Contributing
-
-This is a demonstration project. Feel free to fork and customize!
+Please open a GitHub issue for bugs or suggestions.
 
 ## License
 
-MIT License - Feel free to use this project for any purpose.
-
-## Acknowledgments
-
-This game is inspired by word puzzle games but does not copy any specific implementation, branding, or proprietary content. All puzzles and word lists are original or from public domain sources.
-
-## Support
-
-For issues or questions, please open an issue on the repository.
-
----
-
-Built with ❤️ for remote teams and word game enthusiasts!
+No open-source license has been added to this repository. Standard copyright restrictions apply unless a license is added.
