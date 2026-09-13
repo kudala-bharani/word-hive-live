@@ -8,8 +8,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Generated array fragment, not a standalone JavaScript module.
-    "scripts/new-puzzles-snippet.js",
   ]),
 ]);
 

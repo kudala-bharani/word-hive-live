@@ -14,7 +14,7 @@ A host creates a room, shares a six-character code or invite link, and starts a 
 - Shareable room codes and invite links
 - Between-hive standings and possible-word reveal
 - Pangram detection and bonus scoring
-- 35 bundled puzzle sets
+- 35 puzzle sets with reviewed, family-friendly vocabulary
 - Host controls for starting rounds, ending early, and playing again
 - Responsive interface for desktop and mobile browsers
 - Supabase persistence and Realtime synchronization for multi-device play
@@ -31,7 +31,7 @@ A valid word must:
 - contain at least four letters;
 - include the highlighted center letter;
 - use only the seven available letters (letters may be reused);
-- appear in the puzzle's bundled valid-word list; and
+- appear in the game's approved vocabulary and the current puzzle's word list; and
 - not have been submitted already by that player during the current hive.
 
 ### Scoring
@@ -127,7 +127,9 @@ If your Supabase project predates multi-round support, run [`supabase/migration-
 ```text
 components/                Reusable game and leaderboard UI
 lib/gameConfig.js          Five-hive timing configuration
-lib/puzzles.js             35 bundled puzzles and word lists
+lib/puzzles.js             35 letter sets and derived answer lists
+lib/approvedWords.js       Reviewed everyday vocabulary
+lib/wordPolicy.js          Shared submission and display policy
 lib/supabase.js            Supabase data layer and in-memory fallback
 lib/wordValidator.js       Word validation, pangrams, and scoring
 pages/create.js            Room creation
@@ -140,10 +142,13 @@ supabase/schema.sql        Tables, policies, indexes, and Realtime setup
 
 - Change round count or duration in `lib/gameConfig.js`.
 - Add puzzle definitions in `lib/puzzles.js`.
+- Review new everyday words before adding them to `lib/approvedWords.js`. Adult terms, profanity, slurs, proper names, and obscure dictionary variants are excluded.
 - Change validation and scoring in `lib/wordValidator.js`.
 - Change the honey color palette in `tailwind.config.js`.
 
-A puzzle definition must contain a unique numeric ID, exactly seven unique letters, a center letter included in that set, lowercase accepted words, and any pangrams to highlight in the results view.
+A puzzle definition contains a unique numeric ID, exactly seven unique letters, and a center letter included in that set. Answers and pangrams are derived automatically from the approved vocabulary, so rejected words cannot return through dictionary regeneration. Each hive must have at least 20 approved answers and one familiar pangram.
+
+Run `npm test` to check the catalog, submission rules, and word displays. `node scripts/gen-puzzle-block.js` exports the approved puzzle data. The old raw-dictionary updater and generated snippet have been removed.
 
 ## Security and current limitations
 
@@ -158,7 +163,7 @@ Before treating the app as production-ready, address the following:
 - The 10-player cap is enforced by application code rather than an atomic database operation.
 - Score updates use a read-modify-write flow rather than a database transaction.
 - Rooms are not expired or deleted automatically.
-- Rate limiting, abuse controls, monitoring, analytics, and automated tests are not included.
+- Rate limiting, abuse controls, monitoring, analytics, and multiplayer integration tests are not included.
 
 A hardened version should add authenticated or signed room membership, restrictive RLS policies, server-side/RPC mutations, atomic join and scoring operations, and scheduled room cleanup.
 

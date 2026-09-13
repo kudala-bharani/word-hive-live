@@ -1,17 +1,19 @@
 import { isPangram } from '../lib/wordValidator';
+import { filterAllowedWords } from '../lib/wordPolicy.js';
 
 export default function FoundWordsPanel({ words, puzzleLetters, className = '' }) {
+  const visibleWords = filterAllowedWords(words);
   return (
     <div className={`card flex flex-col h-full min-h-[280px] lg:min-h-[480px] lg:max-h-[calc(100vh-12rem)] ${className}`}>
       <h3 className="text-lg font-bold mb-3 text-gray-800 shrink-0">
-        Your Words ({words.length})
+        Your Words ({visibleWords.length})
       </h3>
       <div className="flex-1 overflow-y-auto pr-1 -mr-1">
-        {words.length === 0 ? (
+        {visibleWords.length === 0 ? (
           <div className="text-gray-500 text-sm">No words found yet. Start typing!</div>
         ) : (
           <div className="flex flex-col gap-2">
-            {words.map((word, index) => {
+            {visibleWords.map((word, index) => {
               const wordIsPangram = puzzleLetters && isPangram(word, puzzleLetters);
               return (
                 <span

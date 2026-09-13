@@ -1,5 +1,8 @@
+import { filterAllowedWords } from '../lib/wordPolicy.js';
+
 export default function PossibleWordsPanel({ puzzle, players }) {
-  if (!puzzle?.validWords?.length) return null;
+  const sorted = filterAllowedWords(puzzle?.validWords).sort((a, b) => a.localeCompare(b));
+  if (sorted.length === 0) return null;
 
   const foundByAnyone = new Set();
   players.forEach((p) => {
@@ -7,7 +10,6 @@ export default function PossibleWordsPanel({ puzzle, players }) {
   });
 
   const pangramSet = new Set((puzzle.pangrams || []).map((w) => w.toLowerCase()));
-  const sorted = [...puzzle.validWords].sort((a, b) => a.localeCompare(b));
   const foundCount = sorted.filter((w) => foundByAnyone.has(w)).length;
 
   return (

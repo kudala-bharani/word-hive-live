@@ -15,7 +15,7 @@ node_modules/
 /build
 dist
 
-# Dictionary source (regenerate with scripts/update-puzzle-words.js)
+# Optional local reference dictionary; never used by the game or generator
 lib/enable1.txt
 
 # Misc
