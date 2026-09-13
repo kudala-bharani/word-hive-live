@@ -146,7 +146,7 @@ supabase/schema.sql        Tables, policies, indexes, and Realtime setup
 - Change validation and scoring in `lib/wordValidator.js`.
 - Change the honey color palette in `tailwind.config.js`.
 
-A puzzle definition contains a unique numeric ID, exactly seven unique letters, and a center letter included in that set. Answers and pangrams are derived automatically from the approved vocabulary, so rejected words cannot return through dictionary regeneration. Each hive must have at least 20 approved answers and one familiar pangram.
+A puzzle definition contains a unique numeric ID, exactly seven unique letters, and a center letter included in that set. Answers and pangrams are derived automatically from the approved vocabulary, so rejected words cannot return through dictionary regeneration. Each hive must have at least 60 approved answers and one familiar pangram; `npm test` enforces this minimum.
 
 Run `npm test` to check the catalog, submission rules, and word displays. `node scripts/gen-puzzle-block.js` exports the approved puzzle data. The old raw-dictionary updater and generated snippet have been removed.
 

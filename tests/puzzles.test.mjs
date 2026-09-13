@@ -15,6 +15,7 @@ const rejectedWords = [
   'dick', 'dicks', 'asshole', 'bitch', 'whore', 'slut', 'wank', 'wanking',
   'nigger', 'nigga', 'kike', 'nitchie', 'spic', 'spics', 'faggot',
   'niggard', 'niggarded', 'niggarding', 'hashish', 'smut', 'pinup',
+  'hash', 'hashes', 'tart', 'tarts',
 ];
 
 test('every hive has a distinct playable layout and reviewed answers', () => {
@@ -30,7 +31,7 @@ test('every hive has a distinct playable layout and reviewed answers', () => {
     assert.equal(new Set(puzzle.letters).size, 7);
     assert(puzzle.letters.every(letter => /^[A-Z]$/.test(letter)));
     assert(puzzle.letters.includes(puzzle.centerLetter));
-    assert(puzzle.validWords.length >= 20, `Hive ${puzzle.id} needs more everyday words`);
+    assert(puzzle.validWords.length >= 60, `Hive ${puzzle.id} must have at least 60 approved answers`);
     assert(puzzle.pangrams.length > 0, `Hive ${puzzle.id} needs a pangram`);
     assert.equal(new Set(puzzle.validWords).size, puzzle.validWords.length);
     for (const word of puzzle.validWords) {
