@@ -14,7 +14,7 @@ A host creates a room, shares a six-character code or invite link, and starts a 
 - Shareable room codes and invite links
 - Between-hive standings and possible-word reveal
 - Pangram detection and bonus scoring
-- 35 puzzle sets with reviewed, family-friendly vocabulary
+- 36 puzzle sets with reviewed, family-friendly vocabulary
 - Host controls for starting rounds, ending early, and playing again
 - Responsive interface for desktop and mobile browsers
 - Supabase persistence and Realtime synchronization for multi-device play
@@ -127,7 +127,7 @@ If your Supabase project predates multi-round support, run [`supabase/migration-
 ```text
 components/                Reusable game and leaderboard UI
 lib/gameConfig.js          Five-hive timing configuration
-lib/puzzles.js             35 letter sets and derived answer lists
+lib/puzzles.js             36 letter sets and derived answer lists
 lib/approvedWords.js       Reviewed everyday vocabulary
 lib/wordPolicy.js          Shared submission and display policy
 lib/supabase.js            Supabase data layer and in-memory fallback

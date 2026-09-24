@@ -19,7 +19,7 @@ const rejectedWords = [
 ];
 
 test('every hive has a distinct playable layout and reviewed answers', () => {
-  assert.equal(puzzles.length, 35);
+  assert.equal(puzzles.length, 36);
   assert.equal(new Set(puzzles.map(p => p.id)).size, puzzles.length);
   assert.equal(new Set(puzzles.map(p => [...p.letters].sort().join(''))).size, puzzles.length);
   assert.deepEqual(approvedWords, [...new Set(approvedWords)].sort());
@@ -43,6 +43,17 @@ test('every hive has a distinct playable layout and reviewed answers', () => {
     assert.equal(getPuzzleById(puzzle.id), puzzle);
     assert.equal(getRandomPuzzleExcluding(puzzles.filter(p => p.id !== puzzle.id).map(p => p.id)), puzzle);
   }
+});
+
+test('picture hive includes familiar answers and a seven-letter pangram', () => {
+  const picture = getPuzzleById(36);
+  assert(picture);
+  assert.equal(picture.centerLetter, 'E');
+  assert.deepEqual(picture.pangrams, ['picture']);
+  for (const word of ['pier', 'price', 'recipe', 'picture']) {
+    assert(validateWord(word, picture.centerLetter, picture.letters, picture.validWords).valid, word);
+  }
+  assert.equal(calculateScore('picture', picture.letters), 14);
 });
 
 test('inappropriate words are rejected even if a stale answer list includes them', () => {
